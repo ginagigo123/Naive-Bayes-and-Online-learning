@@ -87,20 +87,22 @@ X_test = test_images()
 y_test = test_label()
 
 # Discrete mode
-# 32 bins
-def turn_bins(x):
-    return x // 8
-
 # to make the X_train writeable 
 X_train_bin = X_train.copy()
 X_train_bin.flags
-
-# turn  to discrete mode
-for k in trange(len(X_train_bin)):
-    X_train_bin[k] = turn_bins(X_train[k])
+    
+X_train_bin = X_train_bin // 8
         
+# check bin
+for i in range(28):
+    for j in range(28):
+        print(X_train_bin[0][i][j], end=" ")
+    print()
+            
+
 # probablity
-pro = np.zeros(shape=(10, 32, 28, 28))
+# instead of np.zeros(), use np.ones() to avoid empty bin => give a peudocont
+pro = np.ones(shape=(10, 32, 28, 28))
 prior = np.zeros(10)
 
 # fill in the likelihood
@@ -132,9 +134,8 @@ X_test_bin = X_test_bin // 8
 posterior_log = np.zeros(shape=(len(X_test_bin), 10))
 y_predict = np.array( [0] * len(X_test_bin) )
 
-# len(X_test_bin)
-for k in trange(10):
-    print("\nPosterior (in log scale):")
+for k in trange(len(X_test_bin)):
+    #print("\nPosterior (in log scale):")
     max_post_type = 0
     marginal = 0.0
     for num in range(10):
@@ -145,8 +146,7 @@ for k in trange(10):
             for j in range(28):
                 bins = X_test_bin[k][i][j]
                 #print(num, bins, i, j, "probability : ", pro[num][bins][i][j])
-                if pro[num][bins][i][j] != 0.0:
-                    posterior_log[k][num] += math.log( pro[num][bins][i][j] )
+                posterior_log[k][num] += math.log( pro[num][bins][i][j] )
     
         if (posterior_log[k][num] > posterior_log[k][max_post_type] ):
             max_post_type = num
@@ -156,9 +156,9 @@ for k in trange(10):
     # normalize the posterior
     for num in range(10):
         posterior_log[k][num] /= marginal
-        print(num, ":", posterior_log[k][num])
+        #print(num, ":", posterior_log[k][num])
     y_predict[k] = max_post_type
-    print("Prediction:", max_post_type, "Ans:", y_test[k][0])
+    #print("Prediction:", max_post_type, "Ans:", y_test[k][0])
 
 
 def error_rate(predict, true):
