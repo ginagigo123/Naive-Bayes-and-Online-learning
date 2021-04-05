@@ -23,8 +23,8 @@ def factorial(N):
         result *= i
     return result
 
-def prior(p, a, b):
-    return p ** (a-1) * (1-p) ** (b-1) * factorial(a + b) / ( factorial(a) * factorial(b) )
+def beta(p, a, b):
+    return p ** (a-1) * (1-p) ** (b-1) / (factorial(a) * factorial(b)) * factorial(a + b)
 
 def calLikelihood(N, m, p):
     return combination(N, m) * (p ** m) * ( (1-p) ** (N-m) )
@@ -36,7 +36,7 @@ def marginal(N, m, a, b, prob):
         #sum += prior(p, a, b) * calLikelihood(N, m, p)
     return sum
     
-
+# Q 2
 f = open('testfile.txt')
 
 a,b = 0, 0
@@ -65,7 +65,60 @@ for line in f:
     
 f.close()
 
-# Q3
+    # a != 0 & b!=0 -> draw figures:
+    if a != 0 and b != 0:
+        # fig
+        fig, axes = plt.subplots(1, 3, figsize = (10,4))
+        rows = 2
+        columns = 2
+        
+        # calculate prior for the first time
+        if case == 1:    
+            y_prior_line = np.zeros(100)
+            for index, x in enumerate(x_line):
+                y_prior_line[index] = beta(x, a, b)
+            
+        axes[0].plot(x_line, y_prior_line, color="red")
+        axes[0].set_title("prior")
+        axes[0].set_xlabel("u")
+        
+         
+        # show likelihood
+        y_like_line = np.zeros(100)
+        for index, x in enumerate(x_line):
+            y_like_line[index] = calLikelihood(N, m, x)
+        axes[1].plot(x_line, y_like_line, color="blue")
+        axes[1].set_title("likelihood function")
+        axes[1].set_xlabel("u")
+        axes[1].set_ylim([0, 1])
+        
+        
+        # calculate posterior
+        y_marginal = marginal(len(line), count[0], a, b, x_line)
+        y_post_line = np.zeros(100)    
+        for index, x in enumerate(x_line):
+            y_post_line[index] = (x ** (m + a - 1) * (1 - x) ** (N - m + b - 1)) / y_marginal
+        
+        axes[2].plot(x_line, y_post_line, color="red")
+        axes[2].set_title("posterior")
+        axes[2].set_xlabel("u")
+        
+        # posterior = next prior
+        y_prior_line = y_post_line
+    
+    p = count[0] / len(line)
+    likelihood = calLikelihood(len(line), count[0], p)
+    print("Likelihood:", likelihood)
+    print("Beta prior    : ", a, b)
+    a += count[1]
+    b += count[0]
+    print("Beta posterior: ", a, b)
+    case += 1
+    print()
+    
+f.close()
+
+# Q3 only beta distribution
 f = open('testfile.txt')
 
 a = int(input("a : "))
@@ -97,7 +150,7 @@ for line in f:
         if case == 1:    
             y_prior_line = np.zeros(100)
             for index, x in enumerate(x_line):
-                y_prior_line[index] = prior(x, a, b)
+                y_prior_line[index] = beta(x, a, b)
             
         axes[0].plot(x_line, y_prior_line, color="red")
         axes[0].set_title("prior")
@@ -115,11 +168,10 @@ for line in f:
         
         
         # calculate posterior
-        y_marginal = marginal(len(line), count[0], a, b, x_line)
         y_post_line = np.zeros(100)
     
         for index, x in enumerate(x_line):
-            y_post_line[index] = (x ** (m + a - 1) * (1 - x) ** (N - m + b - 1)) / y_marginal
+            y_post_line[index] = beta(x, a +m , b + N - m)
         
         axes[2].plot(x_line, y_post_line, color="red")
         axes[2].set_title("posterior")
@@ -128,15 +180,14 @@ for line in f:
         # posterior = next prior
         y_prior_line = y_post_line
     
-    p = count[0] / len(line)
-    likelihood = calLikelihood(len(line), count[0], p)
-    print("Likelihood:", likelihood)
-    print("Beta prior    : ", a, b)
+    #p = count[0] / len(line)
+    #likelihood = calLikelihood(len(line), count[0], p)
+    #print("Likelihood:", likelihood)
+    #print("Beta prior    : ", a, b)
     a += count[1]
     b += count[0]
-    print("Beta posterior: ", a, b)
+    #print("Beta posterior: ", a, b)
     case += 1
-    print()
+    #print()
     
 f.close()
-
