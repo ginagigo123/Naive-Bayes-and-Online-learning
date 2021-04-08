@@ -110,12 +110,13 @@ def discrete_naive():
                 #print(y_train[k][0], X_train_bin[k][i][j], i, j)
                 pro[ y_train[k][0] ][ X_train_bin[k][i][j] ][i][j] += 1.0
     
+    pro_count = pro.copy()
     # test the probability
     for i in range(10):
         pro[i] = pro[i] / prior[i]
     prior = prior / 60000.0
     
-    return pro, prior
+    return pro_count, pro, prior
 
 def fit_in_naive(pro, prior):
     # to make X_test writeable
@@ -163,10 +164,31 @@ def print_num(x):
     for i in range(28):
         for j in range(28):
             if x[i][j] < 128:
-                print("0", end=" ")
+                print("-", end=" ")
             else:
                 print("*", end=" ")
         print()
+        
+def print_num_DIS(x):
+    print("Imagination of numbers in Bayesian classifier:")
+    for label in range(10):
+        print(label, ":")
+        for i in range(28):
+            for j in range(28):
+                value = np.argmax(x[label][i][j])
+                if value < 15:
+                    print("-", end=" ")
+                else:
+                    print("*", end=" ")
+            print()
+
+
+def show_image(x):
+    # show image of the first image
+    image = np.asarray(x).squeeze()
+    plt.imshow(image)
+    plt.show()
+
 
 X_train = training_images()
 y_train = training_label()
@@ -175,10 +197,14 @@ X_test = test_images()
 y_test = test_label()
 
 # discrete mode
-pro, prior = discrete_naive()
+pro_count, pro, prior = discrete_naive()
 y_predict = fit_in_naive(pro, prior);
 
 print("error rate: ", error_rate(y_predict, y_test))
+
+pro_count = np.einsum('ijkl->iklj', pro_count)
+print_num_DIS(pro_count)
+
 
 # Continuous Gaussian - using MLE
 # for each class = 0 .. 9 => save the mean and covariance of thoses class
@@ -196,6 +222,7 @@ for num in trange(len(X_train)):
         for j in range(28):
             mean[label][i][j] += X_train[num][i][j]
             variance[label][i][j] += X_train[num][i][j] ** 2
+            
 
 for i in range(10):
     mean[i] /= counter[i]
@@ -216,15 +243,16 @@ for k in trange(len(X_test)):
     max_post_type = 0
     for num in range(10):
         # prior
-        posterior_log[k][num] += math.log(counter[num] / 60000)
+        posterior_log[k][num] += math.log(prior[num])
         for i in range(28):
             for j in range(28):
+                posterior_log[k][num] += (-1/2) * math.log(2 * math.pi * variance[num][i][j] )
                 # likelihood
-                posterior_log[k][num] += - 1/2 * math.log(2 * math.pi * variance[num][i][j])
                 posterior_log[k][num] += - 1/2 * ( X_test[k][i][j] - mean[num][i][j] ) ** 2 / variance[num][i][j]
         
         if posterior_log[k][num] > posterior_log[k][max_post_type]:
             max_post_type = num
+
         #marginal += posterior_log[k][num]
     
     #for num in range(10):
@@ -232,9 +260,15 @@ for k in trange(len(X_test)):
         #print(num, ":", posterior_log[k][num])
     y_predict[k] = max_post_type
     #print("Prediction:", max_post_type, "Ans:", y_test[k][0])
+    #print("\n")
     
-print("error rate: ", error_rate(y_predict, y_test))
-        
+print("\nerror rate: ", error_rate(y_predict, y_test))
+
+print("Imagination of numbers in Bayesian classifier:")
+for i in range(10):
+    print(i, ":")
+    print_num(mean[i])
+    print("\n")
     
 
 """
@@ -248,9 +282,3 @@ for i in range(28):
 
 
     
-# show image of the first word
-"""
-image = np.asarray(mean[0]).squeeze()
-plt.imshow(image)
-plt.show()
-"""

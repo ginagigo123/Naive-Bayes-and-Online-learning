@@ -36,9 +36,8 @@ def marginal(N, m, a, b, prob):
         #sum += prior(p, a, b) * calLikelihood(N, m, p)
     return sum
     
-# Q 2
+# only beta distribution with no image
 f = open('testfile.txt')
-
 a,b = 0, 0
 case = 1
 for line in f:
@@ -64,7 +63,31 @@ for line in f:
     print()
     
 f.close()
+    
+# Q3 only beta distribution
+f = open('testfile.txt')
+a = int(input("a : "))
+b = int(input("b : "))
+case = 1
 
+# for graphing the line
+x_line = np.linspace(0, 1, 100)
+for line in f:
+    if line == "\n":
+        continue
+    
+    # count the 0 and 1
+    line = line.strip('\n')
+    i = 0
+    count = [0, 0] # for 0, 1
+    while i < len(line):
+        count[int(line[i])] += 1
+        i += 1
+    
+    # count[0] - count "0" times
+    m = count[0]
+    N = len(line)
+    
     # a != 0 & b!=0 -> draw figures:
     if a != 0 and b != 0:
         # fig
@@ -73,6 +96,7 @@ f.close()
         columns = 2
         
         # calculate prior for the first time
+        # 2nd .. -> prior = the last posterior
         if case == 1:    
             y_prior_line = np.zeros(100)
             for index, x in enumerate(x_line):
@@ -83,7 +107,7 @@ f.close()
         axes[0].set_xlabel("u")
         
          
-        # show likelihood
+        # show likelihood - binomial distribution
         y_like_line = np.zeros(100)
         for index, x in enumerate(x_line):
             y_like_line[index] = calLikelihood(N, m, x)
@@ -93,11 +117,10 @@ f.close()
         axes[1].set_ylim([0, 1])
         
         
-        # calculate posterior
-        y_marginal = marginal(len(line), count[0], a, b, x_line)
-        y_post_line = np.zeros(100)    
+        # calculate posterior - beta distribution
+        y_post_line = np.zeros(100)
         for index, x in enumerate(x_line):
-            y_post_line[index] = (x ** (m + a - 1) * (1 - x) ** (N - m + b - 1)) / y_marginal
+            y_post_line[index] = beta(x, a +m , b + N - m)
         
         axes[2].plot(x_line, y_post_line, color="red")
         axes[2].set_title("posterior")
@@ -115,79 +138,5 @@ f.close()
     print("Beta posterior: ", a, b)
     case += 1
     print()
-    
-f.close()
-
-# Q3 only beta distribution
-f = open('testfile.txt')
-
-a = int(input("a : "))
-b = int(input("b : "))
-case = 1
-x_line = np.linspace(0, 1, 100)
-for line in f:
-    if line == "\n":
-        continue
-    
-    line = line.strip('\n')
-    i = 0
-    count = [0, 0] # for 0, 1
-    while i < len(line):
-        count[int(line[i])] += 1
-        i += 1
-    
-    m = count[0]
-    N = len(line)
-    
-    # a != 0 & b!=0 -> draw figures:
-    if a != 0 and b != 0:
-        # fig
-        fig, axes = plt.subplots(1, 3, figsize = (10,4))
-        rows = 2
-        columns = 2
-        
-        # calculate prior for the first time
-        if case == 1:    
-            y_prior_line = np.zeros(100)
-            for index, x in enumerate(x_line):
-                y_prior_line[index] = beta(x, a, b)
-            
-        axes[0].plot(x_line, y_prior_line, color="red")
-        axes[0].set_title("prior")
-        axes[0].set_xlabel("u")
-        
-         
-        # show likelihood
-        y_like_line = np.zeros(100)
-        for index, x in enumerate(x_line):
-            y_like_line[index] = calLikelihood(N, m, x)
-        axes[1].plot(x_line, y_like_line, color="blue")
-        axes[1].set_title("likelihood function")
-        axes[1].set_xlabel("u")
-        axes[1].set_ylim([0, 1])
-        
-        
-        # calculate posterior
-        y_post_line = np.zeros(100)
-    
-        for index, x in enumerate(x_line):
-            y_post_line[index] = beta(x, a +m , b + N - m)
-        
-        axes[2].plot(x_line, y_post_line, color="red")
-        axes[2].set_title("posterior")
-        axes[2].set_xlabel("u")
-        
-        # posterior = next prior
-        y_prior_line = y_post_line
-    
-    #p = count[0] / len(line)
-    #likelihood = calLikelihood(len(line), count[0], p)
-    #print("Likelihood:", likelihood)
-    #print("Beta prior    : ", a, b)
-    a += count[1]
-    b += count[0]
-    #print("Beta posterior: ", a, b)
-    case += 1
-    #print()
     
 f.close()
